@@ -1,0 +1,15 @@
+[registry]
+global-min-publish-age = "3 days"
+
+[alias]
+today = "run --quiet --release --features today -- today"
+scaffold = "run --quiet --release -- scaffold"
+download = "run --quiet --release -- download"
+read = "run --quiet --release -- read"
+
+solve = "run --quiet --release -- solve"
+all = "run --quiet --release -- all"
+time = "run --quiet --release -- time"
+
+[env]
+AOC_YEAR = "2026"

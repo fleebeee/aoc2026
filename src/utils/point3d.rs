@@ -1,0 +1,219 @@
+use hashbrown::HashSet;
+use std::hash::{Hash, Hasher};
+use std::ops::{Add, AddAssign, Mul, Sub, SubAssign};
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct Point3D {
+    pub x: i64,
+    pub y: i64,
+    pub z: i64,
+}
+
+pub const ORIGIN: Point3D = Point3D::new(0, 0, 0);
+
+impl Point3D {
+    #[inline]
+    pub const fn new(x: i64, y: i64, z: i64) -> Self {
+        Self { x, y, z }
+    }
+
+    #[inline]
+    pub fn orthogonal_neighbors(self) -> Vec<Self> {
+        vec![
+            Point3D::new(self.x + 1, self.y, self.z),
+            Point3D::new(self.x, self.y + 1, self.z),
+            Point3D::new(self.x - 1, self.y, self.z),
+            Point3D::new(self.x, self.y - 1, self.z),
+            Point3D::new(self.x, self.y, self.z + 1),
+            Point3D::new(self.x, self.y, self.z - 1),
+        ]
+    }
+
+    #[inline]
+    pub fn manhattan(self, other: Self) -> i64 {
+        (self.x - other.x).abs() + (self.y - other.y).abs() + (self.z - other.z).abs()
+    }
+
+    #[inline]
+    pub fn distance(self, other: Self) -> f64 {
+        (((self.x - other.x).pow(2) + (self.y - other.y).pow(2) + (self.z - other.z).pow(2)) as f64)
+            .sqrt()
+    }
+
+    #[inline]
+    pub fn signum(self, other: Self) -> Self {
+        Point3D::new(
+            (self.x - other.x).signum(),
+            (self.y - other.y).signum(),
+            (self.z - other.z).signum(),
+        )
+    }
+}
+
+impl Hash for Point3D {
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_i64(self.x);
+        state.write_i64(self.y);
+        state.write_i64(self.z);
+    }
+}
+
+impl Add for Point3D {
+    type Output = Self;
+
+    #[inline]
+    fn add(self, rhs: Self) -> Self {
+        Point3D::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
+    }
+}
+
+impl AddAssign for Point3D {
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+        self.z += rhs.z;
+    }
+}
+
+impl Mul<i64> for Point3D {
+    type Output = Self;
+
+    #[inline]
+    fn mul(self, rhs: i64) -> Self {
+        Point3D::new(self.x * rhs, self.y * rhs, self.z * rhs)
+    }
+}
+
+impl Sub for Point3D {
+    type Output = Self;
+
+    #[inline]
+    fn sub(self, rhs: Self) -> Self {
+        Point3D::new(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
+    }
+}
+
+impl SubAssign for Point3D {
+    #[inline]
+    fn sub_assign(&mut self, rhs: Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.y;
+        self.z -= rhs.z;
+    }
+}
+
+pub fn print_point3d_set(s: &HashSet<Point3D>) {
+    let s: Vec<_> = s.iter().cloned().collect();
+
+    print_point3d_vec(&s);
+}
+
+pub fn get_point3d_vec_bounds(vec: &[Point3D]) -> (Point3D, Point3D) {
+    let mut x_min = i64::MAX;
+    let mut x_max = i64::MIN;
+    let mut y_min = i64::MAX;
+    let mut y_max = i64::MIN;
+    let mut z_min = i64::MAX;
+    let mut z_max = i64::MIN;
+
+    for v in vec {
+        x_min = x_min.min(v.x);
+        x_max = x_max.max(v.x);
+        y_min = y_min.min(v.y);
+        y_max = y_max.max(v.y);
+        z_min = z_min.min(v.z);
+        z_max = z_max.max(v.z);
+    }
+
+    (
+        Point3D::new(x_min, y_min, z_min),
+        Point3D::new(x_max, y_max, z_max),
+    )
+}
+
+pub fn print_point3d_vec(vecs: &[Point3D]) {
+    let mut x_min = i64::MAX;
+    let mut x_max = i64::MIN;
+    let mut y_min = i64::MAX;
+    let mut y_max = i64::MIN;
+    let mut z_min = i64::MAX;
+    let mut z_max = i64::MIN;
+
+    for vec in vecs.iter() {
+        x_min = x_min.min(vec.x);
+        x_max = x_max.max(vec.x);
+        y_min = y_min.min(vec.y);
+        y_max = y_max.max(vec.y);
+        z_min = z_min.min(vec.z);
+        z_max = z_max.max(vec.z);
+    }
+
+    let w = (x_max - x_min) as usize + 1;
+    let h = (y_max - y_min) as usize + 1;
+    let d = (z_max - z_min) as usize + 1;
+
+    // XY plane
+    let mut map_xy = vec![vec![false; w]; h];
+    for vec in vecs.iter() {
+        let x = (vec.x - x_min) as usize;
+        let y = (vec.y - y_min) as usize;
+        map_xy[y][x] = true;
+    }
+
+    println!("XY plane:");
+    for row in &map_xy {
+        for &cell in row {
+            let c = match cell {
+                true => '#',
+                false => '.',
+            };
+            print!("{c}");
+        }
+        println!();
+    }
+    println!();
+
+    // XZ plane
+    let mut map_xz = vec![vec![false; w]; d];
+    for vec in vecs.iter() {
+        let x = (vec.x - x_min) as usize;
+        let z = (vec.z - z_min) as usize;
+        map_xz[z][x] = true;
+    }
+
+    println!("XZ plane:");
+    for row in &map_xz {
+        for &cell in row {
+            let c = match cell {
+                true => '#',
+                false => '.',
+            };
+            print!("{c}");
+        }
+        println!();
+    }
+    println!();
+
+    // YZ plane
+    let mut map_yz = vec![vec![false; h]; d];
+    for vec in vecs.iter() {
+        let y = (vec.y - y_min) as usize;
+        let z = (vec.z - z_min) as usize;
+        map_yz[z][y] = true;
+    }
+
+    println!("YZ plane:");
+    for row in &map_yz {
+        for &cell in row {
+            let c = match cell {
+                true => '#',
+                false => '.',
+            };
+            print!("{c}");
+        }
+        println!();
+    }
+    println!();
+}
