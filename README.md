@@ -1,6 +1,6 @@
 <img src="./.assets/christmas_ferris.png" width="164">
 
-# 🎄 fleebee solutions for Advent of Code {year}
+# 🎄 fleebee solutions for Advent of Code 2026
 
 <!--- advent_readme_stars table --->
 
